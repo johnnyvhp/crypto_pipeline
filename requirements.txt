@@ -1,0 +1,9 @@
+kafka-python
+pyspark
+google-cloud-bigquery
+requests
+prefect
+pandas
+pyarrow
+fastparquet
+pandas-gbq>=0.26.1

@@ -1,0 +1,67 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.2.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks: [crypto_net]
+
+  kafka:
+    image: confluentinc/cp-kafka:7.2.1
+    depends_on: [zookeeper]
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    networks: [crypto_net]
+
+  prefect:
+    image: prefecthq/prefect:3.3.7-python3.13
+    ports:
+      - "4200:4200"
+    environment:
+      # point the CLI/UI at the in-container API
+      PREFECT_API_URL: http://0.0.0.0:4200/api
+      KAFKA_HOST: kafka
+      KAFKA_PORT: "9092"
+    working_dir: /app
+    volumes:
+      - ../:/app
+    command:
+      - prefect
+      - server
+      - start
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "4200"
+    depends_on:
+      - kafka
+      - zookeeper
+    networks: [crypto_net]
+
+  flow-runner:
+    build:
+      context: ..
+      dockerfile: Dockerfile.flow
+    volumes:
+      - ../prefect:/app/prefect
+      - ../scripts:/app/scripts
+      - ../credentials:/app/credentials:ro          # mount credentials
+      - ../.env:/app/.env:ro                       # mount your .env
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PREFECT_API_URL=http://prefect:4200/api
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/gcp_credentials.json
+    depends_on:
+      - kafka
+    command: ["sh", "scripts/wait-for-prefect.sh"]
+    networks: [crypto_net]
+
+networks:
+  crypto_net:

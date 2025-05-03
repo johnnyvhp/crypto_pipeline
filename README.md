@@ -24,6 +24,7 @@ Orchestrated by Prefect
 
 ## 📁 Project Structure
 
+---
 .
 ├── scripts/
 │   ├── api_producer.py          # Fetches crypto prices and sends to Kafka
@@ -38,7 +39,6 @@ Orchestrated by Prefect
 │   └── docker-compose.yml       # Defines all services (Kafka, Prefect, etc.)
 └── credentials/
 └── gcp_credentials.json     # (Git-ignored) GCP service account key
-
 ---
 
 ## 🧠 What I Learned
